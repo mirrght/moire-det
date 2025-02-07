@@ -307,83 +307,83 @@ def binary_accuracy(label, pred):
 # In[14]:
 
 
-generator_optimizer = keras.optimizers.legacy.Adam(0.0002, beta_1=0.5) 
-discriminator_optimizer = keras.optimizers.legacy.Adam(0.0002, beta_1=0.5)
-
-
-# In[15]:
-
-
-def step( real_img_V,real_img_ML,real_img_HH,real_img_HS, real_img_label,batchsize):
-    
-    real_d_label = tf.ones([len(real_img_label),1], tf.float32)# 代表生成图像输入判别器希望得到的标签
-#     real_img_label = tf.reshape(real_img_label,(real_img_label.shape[0],))
-    
-    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-        
-        fake_iamge_label = generator([real_img_V,real_img_ML,real_img_HH,real_img_HS], training=True)#根据图像得到标签
-        d_fake = discriminator([real_img_V,real_img_ML,real_img_HH,real_img_HS, fake_iamge_label], training=False)#根据图像和生成的标签得到判别器判别的结果
-        
-#         generator_loss = cross_entropy(real_d_label,d_fake )+cross_entropy(real_img_label,fake_iamge_label )#生成器的损失
-        generator_loss = g_loss_fn(d_fake )+cross_entropy(real_img_label,fake_iamge_label )#生成器的损失
-        generator_accuracy = binary_accuracy(real_img_label,fake_iamge_label )#生成器准确率
-        generator_grads = gen_tape.gradient(generator_loss, generator.trainable_variables)#生成器关于损失函数求梯度
-        generator_optimizer.apply_gradients(zip(generator_grads, generator.trainable_variables))#生成器更新参数
-        
-        img_V = tf.concat((real_img_V, real_img_V), axis=0)
-        img_ML = tf.concat((real_img_ML, real_img_ML), axis=0)
-        img_HH = tf.concat((real_img_HH, real_img_HH), axis=0)
-        img_HS = tf.concat((real_img_HS, real_img_HS), axis=0)
-        img_label = tf.concat((real_img_label, fake_iamge_label), axis=0)#生成和真实标签
-        
-        
-        d_label = tf.concat((tf.ones((len(real_img_label), 1), tf.float32), tf.zeros((len(real_img_label), 1), tf.float32)), axis=0)#判别器想要得到的判别结果
-        pred = discriminator([img_V, img_ML, img_HH, img_HS, img_label], training=True)#判别器输出的结果
-        
-#         discriminator_loss = cross_entropy(d_label, pred)#判别器的损失值
-        
-        d_real = discriminator([ real_img_V,real_img_ML,real_img_HH,real_img_HS, real_img_label], training=True)
-        discriminator_loss = d_loss_fn(d_real, d_fake)#判别器的损失值           
-        gp = gradient_penalty(discriminator,real_img_V,real_img_ML,real_img_HH,real_img_HS, real_img_label, fake_iamge_label)
-        discriminator_loss += gp * 1.0
-        
-        discriminator_accuracy = binary_accuracy(d_label, pred)#判别器准确率
-        discriminator_grads = disc_tape.gradient(discriminator_loss, discriminator.trainable_variables)#判别器求解梯度
-        discriminator_optimizer.apply_gradients(zip(discriminator_grads, discriminator.trainable_variables))#判别器更新梯度
-
-    return discriminator_loss, discriminator_accuracy, generator_loss, generator_accuracy, fake_iamge_label
-
-
-# In[16]:
-
-
-def train( dataset,EPOCH,BATCH_SIZE):
-    t0 = time.time()
-#     loss = np.zeros(num_epochs)
-    v_accm = 0
-    dataset1=dataset.shuffle(16)
-    ds=dataset1.batch(BATCH_SIZE//2)
-    
-    for ep in range(EPOCH):
-
-        for t, (real_img_V,real_img_ML,real_img_HH,real_img_HS, real_img_label) in enumerate(ds):
-            if t ==1:
-                fake_iamge_label = generator([real_img_V,real_img_ML,real_img_HH,real_img_HS], training=True)
-                v_acc = binary_accuracy(real_img_label,fake_iamge_label )
-#                 if v_acc > v_accm:    
-#                     v_accm = v_acc
-#                     print("ep={}".format(v_accm))
-#                     fi = './model/GAN_MPD_'+dataset_name+'.h5'
-#                     generator.save(fi)
-            else:
-                d_loss, d_acc, g_loss, g_acc, g_img_label = step(real_img_V,real_img_ML,real_img_HH,real_img_HS, real_img_label,BATCH_SIZE)
-            if t % 40 == 0:
-                t1 = time.time()
-                print("ep={} | time={:.1f} | t={} | d_acc={:.2f} | g_acc={:.2f} | d_loss={:.2f} | g_loss={:.2f}".format(
-                    ep, t1-t0, t, d_acc.numpy(), g_acc.numpy(), d_loss.numpy(), g_loss.numpy(), ))
-                t0 = t1
-    fi = './model/GAN_MPD_'+dataset_name+'.h5'
-    generator.save(fi)
+# generator_optimizer = keras.optimizers.legacy.Adam(0.0002, beta_1=0.5)
+# discriminator_optimizer = keras.optimizers.legacy.Adam(0.0002, beta_1=0.5)
+#
+#
+# # In[15]:
+#
+#
+# def step( real_img_V,real_img_ML,real_img_HH,real_img_HS, real_img_label,batchsize):
+#
+#     real_d_label = tf.ones([len(real_img_label),1], tf.float32)# 代表生成图像输入判别器希望得到的标签
+# #     real_img_label = tf.reshape(real_img_label,(real_img_label.shape[0],))
+#
+#     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
+#
+#         fake_iamge_label = generator([real_img_V,real_img_ML,real_img_HH,real_img_HS], training=True)#根据图像得到标签
+#         d_fake = discriminator([real_img_V,real_img_ML,real_img_HH,real_img_HS, fake_iamge_label], training=False)#根据图像和生成的标签得到判别器判别的结果
+#
+# #         generator_loss = cross_entropy(real_d_label,d_fake )+cross_entropy(real_img_label,fake_iamge_label )#生成器的损失
+#         generator_loss = g_loss_fn(d_fake )+cross_entropy(real_img_label,fake_iamge_label )#生成器的损失
+#         generator_accuracy = binary_accuracy(real_img_label,fake_iamge_label )#生成器准确率
+#         generator_grads = gen_tape.gradient(generator_loss, generator.trainable_variables)#生成器关于损失函数求梯度
+#         generator_optimizer.apply_gradients(zip(generator_grads, generator.trainable_variables))#生成器更新参数
+#
+#         img_V = tf.concat((real_img_V, real_img_V), axis=0)
+#         img_ML = tf.concat((real_img_ML, real_img_ML), axis=0)
+#         img_HH = tf.concat((real_img_HH, real_img_HH), axis=0)
+#         img_HS = tf.concat((real_img_HS, real_img_HS), axis=0)
+#         img_label = tf.concat((real_img_label, fake_iamge_label), axis=0)#生成和真实标签
+#
+#
+#         d_label = tf.concat((tf.ones((len(real_img_label), 1), tf.float32), tf.zeros((len(real_img_label), 1), tf.float32)), axis=0)#判别器想要得到的判别结果
+#         pred = discriminator([img_V, img_ML, img_HH, img_HS, img_label], training=True)#判别器输出的结果
+#
+# #         discriminator_loss = cross_entropy(d_label, pred)#判别器的损失值
+#
+#         d_real = discriminator([ real_img_V,real_img_ML,real_img_HH,real_img_HS, real_img_label], training=True)
+#         discriminator_loss = d_loss_fn(d_real, d_fake)#判别器的损失值
+#         gp = gradient_penalty(discriminator,real_img_V,real_img_ML,real_img_HH,real_img_HS, real_img_label, fake_iamge_label)
+#         discriminator_loss += gp * 1.0
+#
+#         discriminator_accuracy = binary_accuracy(d_label, pred)#判别器准确率
+#         discriminator_grads = disc_tape.gradient(discriminator_loss, discriminator.trainable_variables)#判别器求解梯度
+#         discriminator_optimizer.apply_gradients(zip(discriminator_grads, discriminator.trainable_variables))#判别器更新梯度
+#
+#     return discriminator_loss, discriminator_accuracy, generator_loss, generator_accuracy, fake_iamge_label
+#
+#
+# # In[16]:
+#
+#
+# def train( dataset,EPOCH,BATCH_SIZE):
+#     t0 = time.time()
+# #     loss = np.zeros(num_epochs)
+#     v_accm = 0
+#     dataset1=dataset.shuffle(16)
+#     ds=dataset1.batch(BATCH_SIZE//2)
+#
+#     for ep in range(EPOCH):
+#
+#         for t, (real_img_V,real_img_ML,real_img_HH,real_img_HS, real_img_label) in enumerate(ds):
+#             if t ==1:
+#                 fake_iamge_label = generator([real_img_V,real_img_ML,real_img_HH,real_img_HS], training=True)
+#                 v_acc = binary_accuracy(real_img_label,fake_iamge_label )
+# #                 if v_acc > v_accm:
+# #                     v_accm = v_acc
+# #                     print("ep={}".format(v_accm))
+# #                     fi = './model/GAN_MPD_'+dataset_name+'.h5'
+# #                     generator.save(fi)
+#             else:
+#                 d_loss, d_acc, g_loss, g_acc, g_img_label = step(real_img_V,real_img_ML,real_img_HH,real_img_HS, real_img_label,BATCH_SIZE)
+#             if t % 40 == 0:
+#                 t1 = time.time()
+#                 print("ep={} | time={:.1f} | t={} | d_acc={:.2f} | g_acc={:.2f} | d_loss={:.2f} | g_loss={:.2f}".format(
+#                     ep, t1-t0, t, d_acc.numpy(), g_acc.numpy(), d_loss.numpy(), g_loss.numpy(), ))
+#                 t0 = t1
+#     fi = './model/GAN_MPD_'+dataset_name+'.h5'
+#     generator.save(fi)
 
 
 # In[29]:
