@@ -6,7 +6,9 @@ import sys
 import io
 import base64
 
-import cv2
+# import cv2
+import PIL
+import scipy
 import numpy as np
 import streamlit as st
 from test import *
@@ -47,12 +49,26 @@ def makwenf(image):
 
     size = 200  # 假设矩形区域的大小为 100x100
 
-    # 应用高斯模糊进行预处理（由找点变成找区域）
-    gray = cv2.GaussianBlur(img, (size - 1, size - 1), 0)
-    # 利用cv2.minMaxLoc寻找到图像中最亮和最暗的区域
-    (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray)
+    # # 应用高斯模糊进行预处理（由找点变成找区域）
+    # gray = cv2.GaussianBlur(img, (size - 1, size - 1), 0)
+    # # 利用cv2.minMaxLoc寻找到图像中最亮和最暗的区域
+    # (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(gray)
 
-    y, x = maxLoc  # maxLoc 是最大值位置的坐标
+    pil_image = PIL.Image.fromarray(img).convert('L')  # 转换为灰度图像
+    blurred_image = pil_image.filter(PIL.ImageFilter.GaussianBlur(radius=(size / 2)))
+
+    # 转换回 NumPy 数组
+    gray = np.array(blurred_image)
+
+    # 寻找图像中最亮和最暗的区域
+    minVal = np.min(gray)
+    maxVal = np.max(gray)
+
+    # 找到最亮和最暗区域的坐标
+    minLoc = np.unravel_index(np.argmin(gray), gray.shape)
+    maxLoc = np.unravel_index(np.argmax(gray), gray.shape)
+
+    x,y = maxLoc  # maxLoc 是最大值位置的坐标
     half_size = size // 2
 
     # 边界检查，确保矩形区域不会超出图像范围
@@ -74,7 +90,8 @@ def detect_edges(gray_image):
                               [1, 1, 1]])
 
     # 进行滤波操作
-    filtered_image = cv2.filter2D(gray_image, -1, filter_kernel)
+    # filtered_image = cv2.filter2D(gray_image, -1, filter_kernel)
+    filtered_image = scipy.signal.convolve2d(gray_image, filter_kernel, mode='same', boundary='wrap')
 
     # 将非零值设为1，零值设为0
     edges_image = np.where(filtered_image == 0, 0, 1)
